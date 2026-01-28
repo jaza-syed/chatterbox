@@ -1,6 +1,7 @@
 import os
 import math
 from dataclasses import dataclass
+import functools
 from pathlib import Path
 
 import librosa
@@ -215,7 +216,9 @@ class ChatterboxTurboTTS:
 
         return wav
 
-    def prepare_conditionals(self, wav_fpath, exaggeration=0.5, norm_loudness=True):
+
+    @functools.lru_cache(2)
+    def get_conditionals(self, wav_fpath, exaggeration=0.5, norm_loudness=True)-> Conditionals:
         ## Load and norm reference wav
         s3gen_ref_wav, _sr = librosa.load(wav_fpath, sr=S3GEN_SR)
 
@@ -244,7 +247,7 @@ class ChatterboxTurboTTS:
             cond_prompt_speech_tokens=t3_cond_prompt_tokens,
             emotion_adv=exaggeration * torch.ones(1, 1, 1),
         ).to(device=self.device)
-        self.conds = Conditionals(t3_cond, s3gen_ref_dict)
+        return Conditionals(t3_cond, s3gen_ref_dict)
 
     def generate(
         self,
@@ -260,7 +263,7 @@ class ChatterboxTurboTTS:
         norm_loudness=True,
     ):
         if audio_prompt_path:
-            self.prepare_conditionals(audio_prompt_path, exaggeration=exaggeration, norm_loudness=norm_loudness)
+            self.conds = self.get_conditionals(audio_prompt_path, exaggeration=exaggeration, norm_loudness=norm_loudness)
         else:
             assert self.conds is not None, "Please `prepare_conditionals` first or specify `audio_prompt_path`"
 
