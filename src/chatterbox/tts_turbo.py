@@ -127,7 +127,8 @@ class ChatterboxTurboTTS:
         self.tokenizer = tokenizer
         self.device = device
         self.conds = conds
-        self.watermarker = perth.PerthImplicitWatermarker()
+        # self.watermarker = perth.PerthImplicitWatermarker()
+        self.watermarker = perth.DummyWatermarker()
 
     @classmethod
     def from_local(cls, ckpt_dir, device) -> 'ChatterboxTurboTTS':
@@ -263,8 +264,8 @@ class ChatterboxTurboTTS:
         else:
             assert self.conds is not None, "Please `prepare_conditionals` first or specify `audio_prompt_path`"
 
-        if cfg_weight > 0.0 or exaggeration > 0.0 or min_p > 0.0:
-            logger.warning("CFG, min_p and exaggeration are not supported by Turbo version and will be ignored.")
+        if cfg_weight > 0.0 or min_p > 0.0:
+            logger.warning("CFG, min_p and are not supported by Turbo version and will be ignored.")
 
         # Norm and tokenize text
         text = punc_norm(text)
